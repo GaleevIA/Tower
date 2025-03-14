@@ -2,18 +2,22 @@ using System.Collections.Generic;
 using UnityEngine;
 using UniRx;
 using UniRx.Triggers;
-using Zenject;
-using UnityEngine.UI;
 using DG.Tweening;
 using System.Linq;
 using ModestTree;
+using UnityEngine.UI;
 
 public class UIController : MonoBehaviour
 {
     private const string _towerZoneTag = "TowerZone";
     private const string _trashholdTag = "Trashhold";
     private const string _figureTag = "Figure";
+    private const float _animTime = 0.5f;
+    private const float _xOffset = 0.3f;
+    private const float _yOffset = 1f;
 
+    [SerializeField]
+    private ScrollRect _scrollRect;
     [SerializeField]
     private GameObject _scrollViewContent;
     [SerializeField]
@@ -22,11 +26,10 @@ public class UIController : MonoBehaviour
     private GameObject _trashhold;
     [SerializeField]
     private GameObject _towerZone;
-    [SerializeField]
-    private LayerMask _layerMask;
 
     private List<Figure> _spawnedFigures = new();
     private Figure _currentFigure;
+    private Vector3 _startPosition;
     private List<Color> _existedColors = new();
     private List<Figure> _figuresInTower = new();
 
@@ -38,10 +41,10 @@ public class UIController : MonoBehaviour
 
     public void MakeSubscribes()
     {     
-        foreach(var cube in _spawnedFigures)
+        foreach(var figure in _spawnedFigures)
         {
-            cube.OnMouseDragAsObservable()
-                .Subscribe(_ => OnDragStart(cube))
+            figure.OnMouseDragAsObservable()             
+                .Subscribe(_ => OnDragStart(figure))
                 .AddTo(this);
         }
 
@@ -82,12 +85,24 @@ public class UIController : MonoBehaviour
         }
     }
 
-    private void OnDragStart(Figure cube)
+    private void OnDragStart(Figure figure)
     {
         if (_currentFigure != null)
             return;
 
-        _currentFigure = Instantiate(cube, _gameField.transform);
+        _scrollRect.enabled = false;
+
+        _currentFigure = Instantiate(figure, _gameField.transform);
+        _startPosition = figure.transform.position;
+    }
+
+    private void OnDragStartFromTower(Figure figure)
+    {
+        if (_currentFigure != null)
+            return;
+
+        _currentFigure = figure;
+        _startPosition = _currentFigure.transform.position;
     }
 
     private void OnDrag(Vector3 point)
@@ -102,6 +117,8 @@ public class UIController : MonoBehaviour
 
     private void OnDragEnd()
     {
+        _scrollRect.enabled = true;
+
         if (_currentFigure == null)
             return;
 
@@ -109,16 +126,19 @@ public class UIController : MonoBehaviour
 
         if (Physics2D.OverlapCollider(_currentFigure.GetComponent<BoxCollider2D>(), new ContactFilter2D(), result) != 0)
         {
-            if (result[0].tag == _trashholdTag)
+            var resultTag = result[0].tag;
+
+            if (resultTag == _trashholdTag
+                && _figuresInTower.Contains(_currentFigure))
             {
                 MoveToTrashholdAnim(_currentFigure);
             }
-            else if (result[0].tag == _towerZoneTag
+            else if (resultTag == _towerZoneTag
                 && _figuresInTower.IsEmpty())
             {
                 PlaceFigure();
             }
-            else if (result[0].tag == _figureTag
+            else if (resultTag == _figureTag
                 && _figuresInTower.Contains(result[0].GetComponent<Figure>()))
             {
                 var lastFigure = _figuresInTower.Last();
@@ -140,15 +160,30 @@ public class UIController : MonoBehaviour
 
     private void PlaceFigure()
     {
-        _currentFigure.IsPlaced = true;
-
         _figuresInTower.Add(_currentFigure);
 
+        var placedFigure = _currentFigure;
+
+        placedFigure.OnMouseDragAsObservable()
+                .Subscribe(_ => OnDragStartFromTower(placedFigure))
+                .AddTo(this);
+
+        _currentFigure = null;
+    }
+
+    private void TurnBackFigure()
+    {
         _currentFigure = null;
     }
 
     private void DestroyFigure()
     {
+        if (_currentFigure is null)
+            return;
+
+        if (_figuresInTower.Contains(_currentFigure))
+            _figuresInTower.Remove(_currentFigure);
+
         Destroy(_currentFigure.gameObject);
 
         _currentFigure = null;
@@ -166,27 +201,31 @@ public class UIController : MonoBehaviour
 
     private void MoveToTrashholdAnim(Figure figure)
     {
-        figure.transform.DOShakeRotation(0.5f).OnComplete(DestroyFigure);
+        figure.transform.DOMove(_trashhold.transform.position, _animTime);
+        figure.transform.DOShakeRotation(_animTime).OnComplete(DestroyFigure);
     }
 
     private void MoveBackAnim(Figure figure)
     {
-        figure.transform.DOMove(_scrollViewContent.transform.position, 0.5f).OnComplete(DestroyFigure);
+        if (_figuresInTower.Contains(figure))
+        {
+            figure.transform.DOMove(_startPosition, _animTime).OnComplete(TurnBackFigure);
+        }
+        else
+        {
+            figure.transform.DOScale(Vector3.zero, _animTime);
+            figure.transform.DOMove(_startPosition, _animTime).OnComplete(DestroyFigure);
+        }       
     }
 
     private void MoveToTowerAnim(Figure figure, Figure topFigure)
     {
-        var topFigureTransform = topFigure.FigureImage.rectTransform;
-
-        //var width = topFigureTransform.rect.width;
-        var height = topFigureTransform.rect.height;
-
-        //var endPosition = new Vector3(topFigure.transform.position.x + Random.Range(-width / 2, width / 2), topFigure.transform.position.y + height / 2);
+        var endPosition = new Vector3(topFigure.transform.position.x + Random.Range(-_xOffset, _xOffset), topFigure.transform.position.y + _yOffset);
 
         var sequence = DOTween.Sequence();
 
-        sequence.Append(figure.transform.DOMoveY(topFigure.transform.position.y + 5, 0.5f));
-        sequence.Append(figure.transform.DOMove(topFigure.transform.position, 0.5f));
+        sequence.Append(figure.transform.DOMoveY(topFigure.transform.position.y + 5, _animTime));
+        sequence.Append(figure.transform.DOMove(endPosition, _animTime));
         sequence.Play();
     }
 }

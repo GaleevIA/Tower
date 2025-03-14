@@ -619,13 +619,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4006a1ccb362ae446a659031a374d8b2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _scrollRect: {fileID: 1564883296}
   _scrollViewContent: {fileID: 1355245845}
   _gameField: {fileID: 1039235844}
   _trashhold: {fileID: 1287207947}
   _towerZone: {fileID: 77838683}
-  _layerMask:
-    serializedVersion: 2
-    m_Bits: 0
 --- !u!1 &1135448592
 GameObject:
   m_ObjectHideFlags: 0
