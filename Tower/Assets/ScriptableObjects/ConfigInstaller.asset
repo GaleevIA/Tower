@@ -13,3 +13,4 @@ MonoBehaviour:
   m_Name: ConfigInstaller
   m_EditorClassIdentifier: 
   _gameConfig: {fileID: 11400000, guid: 3b1707370d035ed44a92b6954fcf87e2, type: 2}
+  _localizationConfig: {fileID: 11400000, guid: 72c796164ff6bd14bb3d19b67343a97f, type: 2}

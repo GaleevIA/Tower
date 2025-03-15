@@ -4,11 +4,14 @@ using Zenject;
 [CreateAssetMenu(fileName = "ConfigInstaller", menuName = "ScriptableObject/Config Installer")]
 public class ConfigInstaller : ScriptableObjectInstaller<ConfigInstaller>
 {
-    [SerializeField]
+    [SerializeReference]
     private GameConfig _gameConfig;
+    [SerializeField]
+    private LocalizationConfig _localizationConfig;
 
     public override void InstallBindings()
     {
-        Container.BindInstance(_gameConfig).AsSingle();
+        Container.Bind<IGameConfig>().FromInstance(_gameConfig).AsSingle();
+        Container.BindInstance(_localizationConfig).AsSingle();
     }
 }

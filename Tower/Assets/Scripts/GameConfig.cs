@@ -3,14 +3,13 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "GameConfig", menuName = "ScriptableObject/Game Config")]
-public class GameConfig : ScriptableObject
+[Serializable]
+public class GameConfig : ScriptableObject, IGameConfig
 {
-    [Serializable]
-    public struct ConfigStruct
-    {
-        public Figure prefab;
-        public int count;
-    }
-
     public List<ConfigStruct> figuresForSpawn;
+
+    public List<ConfigStruct> GetConfig()
+    {
+        return figuresForSpawn;
+    }
 }
