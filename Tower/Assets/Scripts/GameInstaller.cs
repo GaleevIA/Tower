@@ -12,7 +12,7 @@ public class GameInstaller : MonoInstaller
     public override void InstallBindings()
     {
         Container.BindInstance(_uiController).AsSingle();
-        Container.Bind<AnimController>().AsSingle().NonLazy();
+        Container.Bind<IAnimController>().To<AnimController>().AsSingle();
         Container.BindInstance(_messageController).AsSingle();
     }
 }

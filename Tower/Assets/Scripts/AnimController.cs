@@ -1,32 +1,22 @@
 using DG.Tweening;
-using System;
+using System.Collections.Generic;
 using TMPro;
-using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.UI;
 
-public class AnimController
+public class AnimController : IAnimController
 {
     private const float _animTime = 0.5f;
     private const float _xOffset = 0.3f;
     private const float _yOffset = 1f;
 
-    AnimController(GameController gameController, MessageController messageController) 
-    {
-        gameController.OnMoveToTrashhold += MoveToTrashholdAnim;
-        gameController.OnMoveBack += MoveBackAnim;
-        gameController.OnMoveToTower += MoveToTowerAnim;
-        messageController.OnShowMessage += ShowMessageAnim;
-    }
-
-    private void MoveToTrashholdAnim(Figure figure, Vector3 trashholdPosition, TweenCallback endAction)
-    {
-        figure.transform.DOScale(Vector3.zero, _animTime);
+    public void MoveToTrashholdAnim(Figure figure, Vector3 trashholdPosition, TweenCallback endAction)
+    {       
         figure.transform.DOMove(trashholdPosition, _animTime);
+        figure.transform.DOScale(Vector3.zero, _animTime);
         figure.transform.DOShakeRotation(_animTime).OnComplete(endAction);
     }
 
-    private void MoveBackAnim(Figure figure, bool isInTower, Vector3 startPosition, TweenCallback endAction)
+    public void MoveBackAnim(Figure figure, bool isInTower, Vector3 startPosition, TweenCallback endAction)
     {
         if (isInTower)
         {
@@ -39,7 +29,7 @@ public class AnimController
         }
     }
 
-    private void MoveToTowerAnim(Figure figure, Figure topFigure, TweenCallback endAction)
+    public void MoveToTowerAnim(Figure figure, Figure topFigure, TweenCallback endAction)
     {
         var endPosition = new Vector3(topFigure.transform.position.x + UnityEngine.Random.Range(-_xOffset, _xOffset), topFigure.transform.position.y + _yOffset);
 
@@ -50,7 +40,19 @@ public class AnimController
         sequence.Play().OnComplete(endAction);
     }
 
-    private void ShowMessageAnim(TextMeshProUGUI textField)
+    public void MoveFiguresDown(List<Figure> figures, int startIndex, TweenCallback endAction)
+    {
+        var sequence = DOTween.Sequence();
+
+        for(int i = startIndex; i < figures.Count; i++)
+        {
+            sequence.Append(figures[i].transform.DOMoveY(figures[i].transform.position.y - _yOffset, _animTime / 2));
+        }
+        
+        sequence.Play().OnComplete(endAction);
+    }
+
+    public void ShowMessageAnim(TextMeshProUGUI textField)
     {
         var sequence = DOTween.Sequence();
         sequence.Append(textField.DOFade(1, _animTime));

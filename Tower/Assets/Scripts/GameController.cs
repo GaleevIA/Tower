@@ -32,16 +32,20 @@ public class GameController : MonoBehaviour
     private List<Figure> _figuresInTower = new();
     private IGameConfig _gameConfig;
     private MessageController _messageController;
+    private IAnimController _animController;
+    private bool _dragIsOn;
+    private bool _towerIsFull;
 
     public Action<Figure, Vector3, TweenCallback> OnMoveToTrashhold;
     public Action<Figure, bool, Vector3, TweenCallback> OnMoveBack;
     public Action<Figure, Figure, TweenCallback> OnMoveToTower;
 
     [Inject]
-    public void Initialize(IGameConfig gameConfig, MessageController messageController)
+    public void Initialize(IGameConfig gameConfig, MessageController messageController, IAnimController animController)
     {
         _gameConfig = gameConfig;
         _messageController = messageController;
+        _animController = animController;
 
         GenerateFigures();
         MakeSubscribes();
@@ -100,13 +104,15 @@ public class GameController : MonoBehaviour
         if (_currentFigure != null)
             return;
 
+        _dragIsOn = true;
         _currentFigure = figure;
         _startPosition = _currentFigure.transform.position;
     }
 
     private void OnDrag(Vector3 point)
     {
-        if (_currentFigure is null)
+        if (!_dragIsOn 
+            && _currentFigure is null)
             return;
 
         var a = Camera.main.ScreenToWorldPoint(point);
@@ -116,6 +122,8 @@ public class GameController : MonoBehaviour
 
     private void OnDragEnd()
     {
+        _dragIsOn = false;
+
         _scrollRect.enabled = true;
 
         if (_currentFigure == null)
@@ -127,26 +135,26 @@ public class GameController : MonoBehaviour
         {
             var resultTag = result[0].tag;
 
-            if (resultTag == _trashholdTag
-                && _figuresInTower.Contains(_currentFigure))
+            if (CheckConditionsBeforeMoveToTrashhold(resultTag))
             {
-                OnMoveToTrashhold?.Invoke(_currentFigure, _trashhold.transform.position, DestroyFigure);
+                var indexOfFigure = _figuresInTower.IndexOf(_currentFigure);
+
+                _animController.MoveToTrashholdAnim(_currentFigure, _trashhold.transform.position, null);
+                _animController.MoveFiguresDown(_figuresInTower, indexOfFigure + 1, DestroyFigure);
 
                 _messageController.ShowMessage("MoveToTrashhold");
             }
-            else if (resultTag == _towerZoneTag
-                && _figuresInTower.IsEmpty())
+            else if (CheckConditionsBeforeMoveToTowerBase(resultTag))
             {
                 PlaceFigure();
 
                 _messageController.ShowMessage("FigurePlaced");
             }
-            else if (resultTag == _figureTag
-                && _figuresInTower.Contains(result[0].GetComponent<Figure>()))
+            else if (CheckConditionsBeforeMoveToTower(resultTag, result[0].GetComponent<Figure>()))
             {
                 var lastFigure = _figuresInTower.Last();
 
-                OnMoveToTower?.Invoke(_currentFigure, lastFigure, PlaceFigure);
+                _animController.MoveToTowerAnim(_currentFigure, lastFigure, PlaceFigure);
 
                 _messageController.ShowMessage("FigurePlacedToTower");
             }
@@ -154,7 +162,7 @@ public class GameController : MonoBehaviour
             {
                 var isInTower = _figuresInTower.Contains(_currentFigure);
 
-                OnMoveBack?.Invoke(_currentFigure, isInTower, _startPosition, isInTower ? TurnBackFigure : DestroyFigure);
+                _animController.MoveBackAnim(_currentFigure, isInTower, _startPosition, isInTower ? TurnBackFigure : DestroyFigure);
 
                 _messageController.ShowMessage("MoveBack");
             }
@@ -163,7 +171,7 @@ public class GameController : MonoBehaviour
         {
             var isInTower = _figuresInTower.Contains(_currentFigure);
 
-            OnMoveBack?.Invoke(_currentFigure, isInTower, _startPosition, isInTower ? TurnBackFigure : DestroyFigure);
+            _animController.MoveBackAnim(_currentFigure, isInTower, _startPosition, isInTower ? TurnBackFigure : DestroyFigure);
 
             _messageController.ShowMessage("MoveBack");
         }    
@@ -180,6 +188,8 @@ public class GameController : MonoBehaviour
                 .AddTo(this);
 
         _currentFigure = null;
+
+        _towerIsFull = CheckDisplayBounds();
     }
 
     private void TurnBackFigure()
@@ -198,27 +208,54 @@ public class GameController : MonoBehaviour
         Destroy(_currentFigure.gameObject);
 
         _currentFigure = null;
+
+        _towerIsFull = CheckDisplayBounds();
     }
 
     private bool CheckDisplayBounds()
     {
-        Vector3 cameraToObject = _currentFigure.transform.position - Camera.main.transform.position;
+        var figure = _figuresInTower.Last();
+        var figurePosition = figure.transform.position;
+        var figureBounds = figure.BoxCollider.bounds;
+
+        Vector3 cameraToObject = figurePosition - Camera.main.transform.position;
 
         float distance = -Vector3.Project(cameraToObject, Camera.main.transform.forward).z;
 
         Vector3 leftBot = Camera.main.ViewportToWorldPoint(new Vector3(0, 0, distance));
         Vector3 rightTop = Camera.main.ViewportToWorldPoint(new Vector3(1, 1, distance));
 
-        if (_currentFigure.transform.position.x < leftBot.x
-            || _currentFigure.transform.position.x > rightTop.x
-            || _currentFigure.transform.position.y < leftBot.y
-            || _currentFigure.transform.position.y > rightTop.y)
+        if (figureBounds.min.x < leftBot.x
+            || figureBounds.max.x > rightTop.x
+            || figureBounds.min.y < leftBot.y
+            || figureBounds.max.y > rightTop.y)
         {
             return true;
         }
 
         return false;
     }
+
+    private bool CheckConditionsBeforeMoveToTrashhold(string resultTag)
+    {
+        return resultTag == _trashholdTag
+                && _figuresInTower.Contains(_currentFigure);
+    }
+
+    private bool CheckConditionsBeforeMoveToTowerBase(string resultTag)
+    {
+        return resultTag == _towerZoneTag
+                && _figuresInTower.IsEmpty();
+    }
+
+    private bool CheckConditionsBeforeMoveToTower(string resultTag, Figure otherFigure)
+    {
+        return resultTag == _figureTag
+                && _figuresInTower.Contains(otherFigure)
+                && !_towerIsFull;
+    }
+
+
 
     private void OnDestroy()
     {
