@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8a52b8aa55466834a8407b947518a615, type: 3}
   m_Name: ConfigInstaller
   m_EditorClassIdentifier: 
-  _gameConfig: {fileID: 11400000, guid: 3b1707370d035ed44a92b6954fcf87e2, type: 2}
+  _gameConfig: {fileID: 11400000, guid: 358d02fc9654b264f89393a1de36fcc1, type: 2}
   _localizationConfig: {fileID: 11400000, guid: 72c796164ff6bd14bb3d19b67343a97f, type: 2}

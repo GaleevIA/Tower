@@ -1,33 +1,33 @@
-using System;
+using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
 using Zenject;
 
-public class MessageController : MonoBehaviour
+public class MessageController : MonoBehaviour, IMessageController
 {
     [SerializeField]
     private TextMeshProUGUI _textField;
 
-    private LocalizationConfig _localizationConfig;
-
-    public Action<TextMeshProUGUI> OnShowMessage;
+    private List<LocalizationStruct> _localization;
+    private IAnimController _animController;
 
     [Inject]
-    public void Initialize(LocalizationConfig localizationConfig)
+    public void Initialize(ILocalizationConfig localizationConfig, IAnimController animController)
     {
-        _localizationConfig = localizationConfig;
+        _animController = animController;
+        _localization = localizationConfig.GetConfig();
     }
 
     public void ShowMessage(string key)
     {
-        var localization = _localizationConfig.config.Where(e => e.Key == key).Select(e => e.Value).FirstOrDefault();
+        var localizedString = _localization.Where(e => e.Key == key).Select(e => e.Value).FirstOrDefault();
 
-        if (localization is not null)
+        if (localizedString is not null)
         {
-            _textField.text = localization;
+            _textField.text = localizedString;
 
-            OnShowMessage?.Invoke(_textField);
+            _animController.ShowMessageAnim(_textField, null);
         }
     }
 }

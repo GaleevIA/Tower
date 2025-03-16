@@ -6,7 +6,8 @@ using UnityEngine;
 [Serializable]
 public class GameConfig : ScriptableObject, IGameConfig
 {
-    public List<ConfigStruct> figuresForSpawn;
+    [SerializeField]
+    private List<ConfigStruct> figuresForSpawn;
 
     public List<ConfigStruct> GetConfig()
     {

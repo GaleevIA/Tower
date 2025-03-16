@@ -1,4 +1,3 @@
-using UniRx;
 using UnityEngine;
 using Zenject;
 
@@ -13,6 +12,6 @@ public class GameInstaller : MonoInstaller
     {
         Container.BindInstance(_uiController).AsSingle();
         Container.Bind<IAnimController>().To<AnimController>().AsSingle();
-        Container.BindInstance(_messageController).AsSingle();
+        Container.Bind<IMessageController>().FromInstance(_messageController).AsSingle();
     }
 }

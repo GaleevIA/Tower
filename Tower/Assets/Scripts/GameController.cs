@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UniRx;
 using UniRx.Triggers;
-using DG.Tweening;
 using System.Linq;
 using ModestTree;
 using UnityEngine.UI;
@@ -31,17 +30,13 @@ public class GameController : MonoBehaviour
     private Vector3 _startPosition;
     private List<Figure> _figuresInTower = new();
     private IGameConfig _gameConfig;
-    private MessageController _messageController;
+    private IMessageController _messageController;
     private IAnimController _animController;
     private bool _dragIsOn;
     private bool _towerIsFull;
 
-    public Action<Figure, Vector3, TweenCallback> OnMoveToTrashhold;
-    public Action<Figure, bool, Vector3, TweenCallback> OnMoveBack;
-    public Action<Figure, Figure, TweenCallback> OnMoveToTower;
-
     [Inject]
-    public void Initialize(IGameConfig gameConfig, MessageController messageController, IAnimController animController)
+    public void Initialize(IGameConfig gameConfig, IMessageController messageController, IAnimController animController)
     {
         _gameConfig = gameConfig;
         _messageController = messageController;
@@ -49,6 +44,7 @@ public class GameController : MonoBehaviour
 
         GenerateFigures();
         MakeSubscribes();
+        LoadProgress();
     }
 
     public void MakeSubscribes()
@@ -146,7 +142,7 @@ public class GameController : MonoBehaviour
             }
             else if (CheckConditionsBeforeMoveToTowerBase(resultTag))
             {
-                PlaceFigure();
+                PlaceFigure(_currentFigure);
 
                 _messageController.ShowMessage("FigurePlaced");
             }
@@ -154,7 +150,7 @@ public class GameController : MonoBehaviour
             {
                 var lastFigure = _figuresInTower.Last();
 
-                _animController.MoveToTowerAnim(_currentFigure, lastFigure, PlaceFigure);
+                _animController.MoveToTowerAnim(_currentFigure, lastFigure, () => PlaceFigure(_currentFigure)) ;
 
                 _messageController.ShowMessage("FigurePlacedToTower");
             }
@@ -177,11 +173,11 @@ public class GameController : MonoBehaviour
         }    
     }
 
-    private void PlaceFigure()
+    private void PlaceFigure(Figure figure)
     {
-        _figuresInTower.Add(_currentFigure);
+        _figuresInTower.Add(figure);
 
-        var placedFigure = _currentFigure;
+        var placedFigure = figure;
 
         placedFigure.OnMouseDragAsObservable()
                 .Subscribe(_ => OnDragStartFromTower(placedFigure))
@@ -229,9 +225,7 @@ public class GameController : MonoBehaviour
             || figureBounds.max.x > rightTop.x
             || figureBounds.min.y < leftBot.y
             || figureBounds.max.y > rightTop.y)
-        {
             return true;
-        }
 
         return false;
     }
@@ -255,16 +249,58 @@ public class GameController : MonoBehaviour
                 && !_towerIsFull;
     }
 
+    private void SaveProgress()
+    {
+        var saveArray = new string[_figuresInTower.Count];
 
+        for (int i = 0; i < _figuresInTower.Count; i++)
+        {
+            var saveInfo = new FigureSaveInfo(_figuresInTower[i]);
+            saveArray[i] = JsonUtility.ToJson(saveInfo);
+        }
+
+        var saveString = String.Join(";", saveArray);
+
+        PlayerPrefs.SetString("FiguresInTower", saveString);
+        PlayerPrefs.Save();
+    }
+
+    private void LoadProgress()
+    {
+        var loadString = PlayerPrefs.GetString("FiguresInTower");
+
+        if (loadString.IsEmpty())
+            return;
+
+        var figuresPrefabs = _gameConfig.GetConfig().Select(e => e.prefab).ToList();
+        var loadArray = loadString.Split(";");
+
+        for (int i = 0; i < loadArray.Length; i++)
+        {
+            var saveInfo = JsonUtility.FromJson<FigureSaveInfo>(loadArray[i]);
+
+            var prefabToInstantiate = figuresPrefabs.FirstOrDefault(e => e.FigureType == saveInfo.figureType);
+
+            if (prefabToInstantiate is null)
+                prefabToInstantiate = figuresPrefabs.First();
+
+            var figureGO = Instantiate(prefabToInstantiate, saveInfo.position, Quaternion.identity, _gameField.transform);
+            figureGO.SetColor(saveInfo.color);
+
+            PlaceFigure(figureGO);
+        }
+    }
 
     private void OnDestroy()
     {
         foreach (var item in _spawnedFigures)
-        {
             Destroy(item);
-        }
 
         _spawnedFigures = null;
     }
-}
 
+    private void OnApplicationQuit()
+    {
+        SaveProgress();
+    }
+}

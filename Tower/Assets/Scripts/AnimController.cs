@@ -8,6 +8,8 @@ public class AnimController : IAnimController
     private const float _animTime = 0.5f;
     private const float _xOffset = 0.3f;
     private const float _yOffset = 1f;
+    private const float _yOffsetOnJump = 3f;
+    private const float _interfvalOnMessage = 0.5f;
 
     public void MoveToTrashholdAnim(Figure figure, Vector3 trashholdPosition, TweenCallback endAction)
     {       
@@ -31,11 +33,11 @@ public class AnimController : IAnimController
 
     public void MoveToTowerAnim(Figure figure, Figure topFigure, TweenCallback endAction)
     {
-        var endPosition = new Vector3(topFigure.transform.position.x + UnityEngine.Random.Range(-_xOffset, _xOffset), topFigure.transform.position.y + _yOffset);
+        var endPosition = new Vector3(topFigure.transform.position.x + Random.Range(-_xOffset, _xOffset), topFigure.transform.position.y + _yOffset);
 
         var sequence = DOTween.Sequence();
 
-        sequence.Append(figure.transform.DOMoveY(topFigure.transform.position.y + 5, _animTime));
+        sequence.Append(figure.transform.DOMoveY(topFigure.transform.position.y + _yOffsetOnJump, _animTime));
         sequence.Append(figure.transform.DOMove(endPosition, _animTime));
         sequence.Play().OnComplete(endAction);
     }
@@ -52,13 +54,12 @@ public class AnimController : IAnimController
         sequence.Play().OnComplete(endAction);
     }
 
-    public void ShowMessageAnim(TextMeshProUGUI textField)
+    public void ShowMessageAnim(TextMeshProUGUI textField, TweenCallback endAction)
     {
         var sequence = DOTween.Sequence();
         sequence.Append(textField.DOFade(1, _animTime));
-        sequence.AppendInterval(0.5f);
+        sequence.AppendInterval(_interfvalOnMessage);
         sequence.Append(textField.DOFade(0, _animTime));
-
-        sequence.Play();
+        sequence.Play().OnComplete(endAction);
     }
 }
