@@ -32,8 +32,8 @@ public class GameController : MonoBehaviour
     private IGameConfig _gameConfig;
     private IMessageController _messageController;
     private IAnimController _animController;
-    private bool _dragIsOn;
     private bool _towerIsFull;
+    private bool _animIsOn;
 
     [Inject]
     public void Initialize(IGameConfig gameConfig, IMessageController messageController, IAnimController animController)
@@ -88,6 +88,8 @@ public class GameController : MonoBehaviour
     {
         if (_currentFigure != null)
             return;
+        if (_animIsOn)
+            return;
 
         _scrollRect.enabled = false;
 
@@ -99,16 +101,18 @@ public class GameController : MonoBehaviour
     {
         if (_currentFigure != null)
             return;
+        if (_animIsOn)
+            return;
 
-        _dragIsOn = true;
         _currentFigure = figure;
         _startPosition = _currentFigure.transform.position;
     }
 
     private void OnDrag(Vector3 point)
     {
-        if (!_dragIsOn 
-            && _currentFigure is null)
+        if (_currentFigure is null)
+            return;
+        if (_animIsOn)
             return;
 
         var a = Camera.main.ScreenToWorldPoint(point);
@@ -117,13 +121,13 @@ public class GameController : MonoBehaviour
     }
 
     private void OnDragEnd()
-    {
-        _dragIsOn = false;
-
+    {      
         _scrollRect.enabled = true;
 
         if (_currentFigure == null)
             return;
+
+        _animIsOn = true;
 
         var result = new List<Collider2D>();
 
@@ -184,6 +188,7 @@ public class GameController : MonoBehaviour
                 .AddTo(this);
 
         _currentFigure = null;
+        _animIsOn = false;
 
         _towerIsFull = CheckDisplayBounds();
     }
@@ -191,6 +196,7 @@ public class GameController : MonoBehaviour
     private void TurnBackFigure()
     {
         _currentFigure = null;
+        _animIsOn = false;
     }
 
     private void DestroyFigure()
@@ -204,6 +210,7 @@ public class GameController : MonoBehaviour
         Destroy(_currentFigure.gameObject);
 
         _currentFigure = null;
+        _animIsOn = false;
 
         _towerIsFull = CheckDisplayBounds();
     }
