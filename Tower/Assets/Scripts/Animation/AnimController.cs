@@ -46,11 +46,11 @@ public class AnimController : IAnimController
     {
         var sequence = DOTween.Sequence();
 
-        for(int i = startIndex; i < figures.Count; i++)
+        for (int i = startIndex; i < figures.Count; i++)
         {
             sequence.Append(figures[i].transform.DOMoveY(figures[i].transform.position.y - _yOffset, _animTime / 2));
         }
-        
+
         sequence.Play().OnComplete(endAction);
     }
 

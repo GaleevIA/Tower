@@ -8,9 +8,16 @@ public class GameConfig : ScriptableObject, IGameConfig
 {
     [SerializeField]
     private List<ConfigStruct> figuresForSpawn;
+    [SerializeField]
+    private ELanguage textLanguage;
 
     public List<ConfigStruct> GetConfig()
     {
         return figuresForSpawn;
+    }
+
+    public ELanguage GetTextLanguage()
+    {
+        return textLanguage;
     }
 }

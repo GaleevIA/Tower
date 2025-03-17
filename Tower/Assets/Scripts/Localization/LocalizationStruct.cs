@@ -1,8 +1,9 @@
 using System;
+using System.Collections.Generic;
 
 [Serializable]
 public struct LocalizationStruct
 {
     public string Key;
-    public string Value;
+    public List<LanguageStruct> Value;
 }

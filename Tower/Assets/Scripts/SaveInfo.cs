@@ -10,7 +10,7 @@ public class FigureSaveInfo
 
     public FigureSaveInfo(Figure figure) 
     {
-        position = figure.transform.position;
+        position = figure.transform.localPosition;
         color = figure.FigureImage.color;
         figureType = figure.FigureType;
     }

@@ -86,6 +86,8 @@ public class GameController : MonoBehaviour
 
     private void OnDragStart(Figure figure)
     {
+        _towerIsFull = IsTowerOverDisplayView();
+
         if (_currentFigure != null)
             return;
         if (_animIsOn)
@@ -93,7 +95,7 @@ public class GameController : MonoBehaviour
 
         _scrollRect.enabled = false;
 
-        _currentFigure = Instantiate(figure, _gameField.transform);
+        _currentFigure = Instantiate(figure, _towerZone.transform);
         _startPosition = figure.transform.position;
     }
 
@@ -105,6 +107,7 @@ public class GameController : MonoBehaviour
             return;
 
         _currentFigure = figure;
+        _currentFigure.transform.SetParent(_towerZone.transform);
         _startPosition = _currentFigure.transform.position;
     }
 
@@ -139,8 +142,8 @@ public class GameController : MonoBehaviour
             {
                 var indexOfFigure = _figuresInTower.IndexOf(_currentFigure);
 
-                _animController.MoveToTrashholdAnim(_currentFigure, _trashhold.transform.position, null);
-                _animController.MoveFiguresDown(_figuresInTower, indexOfFigure + 1, DestroyFigure);
+                _animController.MoveToTrashholdAnim(_currentFigure, _trashhold.transform.position, DestroyFigure);
+                _animController.MoveFiguresDown(_figuresInTower, indexOfFigure + 1, null);
 
                 _messageController.ShowMessage("MoveToTrashhold");
             }
@@ -182,6 +185,7 @@ public class GameController : MonoBehaviour
         _figuresInTower.Add(figure);
 
         var placedFigure = figure;
+        placedFigure.transform.SetParent(_towerZone.transform);
 
         placedFigure.OnMouseDragAsObservable()
                 .Subscribe(_ => OnDragStartFromTower(placedFigure))
@@ -189,8 +193,6 @@ public class GameController : MonoBehaviour
 
         _currentFigure = null;
         _animIsOn = false;
-
-        _towerIsFull = CheckDisplayBounds();
     }
 
     private void TurnBackFigure()
@@ -211,12 +213,13 @@ public class GameController : MonoBehaviour
 
         _currentFigure = null;
         _animIsOn = false;
-
-        _towerIsFull = CheckDisplayBounds();
     }
 
-    private bool CheckDisplayBounds()
+    private bool IsTowerOverDisplayView()
     {
+        if (_figuresInTower.IsEmpty())
+            return false;
+
         var figure = _figuresInTower.Last();
         var figurePosition = figure.transform.position;
         var figureBounds = figure.BoxCollider.bounds;
@@ -291,10 +294,15 @@ public class GameController : MonoBehaviour
             if (prefabToInstantiate is null)
                 prefabToInstantiate = figuresPrefabs.First();
 
-            var figureGO = Instantiate(prefabToInstantiate, saveInfo.position, Quaternion.identity, _gameField.transform);
+            var figureGO = Instantiate(prefabToInstantiate, _towerZone.transform);
+            figureGO.transform.localPosition = saveInfo.position;
             figureGO.SetColor(saveInfo.color);
 
-            PlaceFigure(figureGO);
+            figureGO.OnMouseDragAsObservable()
+                .Subscribe(_ => OnDragStartFromTower(figureGO))
+                .AddTo(this);
+
+            _figuresInTower.Add(figureGO);
         }
     }
 

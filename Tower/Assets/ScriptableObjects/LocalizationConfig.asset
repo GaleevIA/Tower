@@ -14,10 +14,28 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   config:
   - Key: MoveToTrashhold
-    Value: "\u041F\u0435\u0440\u0435\u043C\u0435\u0449\u0435\u043D \u0432 \u043A\u043E\u0440\u0437\u0438\u043D\u0443"
+    Value:
+    - language: 0
+      localizedString: "\u041F\u0435\u0440\u0435\u043D\u0435\u0441\u043B\u0438 \u0432
+        \u043A\u043E\u0440\u0437\u0438\u043D\u0443"
+    - language: 1
+      localizedString: Moved to the trash
   - Key: FigurePlaced
-    Value: "\u041E\u0441\u043D\u043E\u0432\u0430\u043D\u0438\u0435 \u0443\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D\u043E"
+    Value:
+    - language: 0
+      localizedString: "\u0423\u0441\u0442\u0430\u043D\u043E\u0432\u0438\u043B\u0438
+        \u0444\u0438\u0433\u0443\u0440\u0443"
+    - language: 1
+      localizedString: Set the figure
   - Key: FigurePlacedToTower
-    Value: "\u041F\u0435\u0440\u0435\u043C\u0435\u0449\u0435\u043D \u0432 \u0431\u0430\u0448\u043D\u044E"
+    Value:
+    - language: 0
+      localizedString: "\u0414\u043E\u0431\u0430\u0432\u0438\u043B\u0438 \u0432 \u0431\u0430\u0448\u043D\u044E"
+    - language: 1
+      localizedString: Added to the tower
   - Key: MoveBack
-    Value: "\u0412\u0435\u0440\u043D\u0443\u043B\u0441\u044F \u043D\u0430 \u043C\u0435\u0441\u0442\u043E"
+    Value:
+    - language: 0
+      localizedString: "\u0412\u0435\u0440\u043D\u0443\u043B\u0430\u0441\u044C \u043D\u0430\u0437\u0430\u0434"
+    - language: 1
+      localizedString: Moved back
